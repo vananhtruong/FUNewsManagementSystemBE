@@ -1,0 +1,6 @@
+@APIL_HostAddress = http://localhost:5268
+
+GET {{APIL_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
