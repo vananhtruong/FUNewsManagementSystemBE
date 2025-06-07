@@ -1,4 +1,5 @@
 ﻿using BusinessObject.Entities;
+using BusinessObject.Model;
 
 public interface ISystemAccountService
 {
@@ -8,4 +9,5 @@ public interface ISystemAccountService
     Task UpdateSystemAccountAsync(SystemAccount systemAccount);
     Task DeleteSystemAccountAsync(short id);
     Task<SystemAccount?> Login(string email, string password);
+    Task<SystemAccount?> LoginGoogle(LoginGoogleModel loginGoogleModel);
 }

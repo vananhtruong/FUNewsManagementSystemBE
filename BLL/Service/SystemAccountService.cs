@@ -2,6 +2,7 @@
 using FUNews.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 using BusinessLogicLayer.UnitOfWorks;
+using BusinessObject.Model;
 
 namespace FUNews.BLL.Services
 {
@@ -66,6 +67,26 @@ namespace FUNews.BLL.Services
         public async Task<SystemAccount> Login(string email, string password)
         {
             return await _systemAccountRepository.FindAll().Where(x => x.AccountEmail.Equals(email) && x.AccountPassword.Equals(password)).FirstOrDefaultAsync();
+        }
+
+        public async Task<SystemAccount> LoginGoogle(LoginGoogleModel loginGoogleModel)
+        {
+            var isexist = _systemAccountRepository.FindAll(x => x.AccountEmail.Equals(loginGoogleModel.AccountEmail));
+            if (isexist.Any())
+            {
+                return await isexist.FirstOrDefaultAsync();
+            }
+            var random = new Random();
+            var newAccount = new SystemAccount
+            {
+                AccountId = (short)random.Next(1000, 9999),
+                AccountEmail = loginGoogleModel.AccountEmail,
+                AccountName = loginGoogleModel.AccountName,
+                AccountRole = 2,
+            };
+            _systemAccountRepository.Create(newAccount);
+            _unitOfWork.SaveChange();
+            return await _systemAccountRepository.FindAll(x => x.AccountEmail.Equals(loginGoogleModel.AccountEmail)).FirstOrDefaultAsync();
         }
     }
 }

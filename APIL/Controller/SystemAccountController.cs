@@ -29,6 +29,20 @@ namespace WebAppAPI.Controller
             var user = await _aS.Login(loginModel.Email, loginModel.Password);
             return user == null ? Unauthorized() : Ok(user);
         }
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] SystemAccount systemAccount)
+        {
+            if (systemAccount == null)
+                return BadRequest("System account cannot be null.");
+            await _aS.AddSystemAccountAsync(systemAccount);
+            return CreatedAtAction(nameof(GetById), new { id = systemAccount.AccountId }, systemAccount);
+        }
+        [HttpPost("loginwithgoogle")]
+        public async Task<IActionResult> LoginWithGoogle([FromBody] LoginGoogleModel loginGoogleModel)
+        {
+            var user = await _aS.LoginGoogle(loginGoogleModel);
+            return user == null ? Unauthorized() : Ok(user);
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(short id)
         {

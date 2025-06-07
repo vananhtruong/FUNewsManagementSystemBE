@@ -84,4 +84,8 @@ public class GenericRepository<TEntity, TKey> : IGenericRepository<TEntity, TKey
 
         return "1";
     }
+    public bool IsExist(TKey id, string idPropertyName)
+    {
+        return _context.Set<TEntity>().Any(e => EF.Property<TKey>(e, idPropertyName).Equals(id));
+    }
 }

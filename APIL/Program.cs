@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://localhost:7285")
+        policy.WithOrigins("https://localhost:7285 ") /*https://localhost:7285   https://prnnew.runasp.net*/
               .AllowCredentials()
               .AllowAnyMethod()
               .AllowAnyHeader();
@@ -54,6 +54,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseRouting();
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -18,6 +18,7 @@ namespace FUNews.DAL.Repositories
         void Create(TEntity entity);
         void Update(TEntity entity);
         void Delete(TEntity entity);
+        bool IsExist(TKey id, string idPropertyName);
     }
 
 }
