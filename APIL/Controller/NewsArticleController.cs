@@ -1,7 +1,9 @@
 ﻿using BusinessObject.Entities;
 using BusinessObject.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Query;
 
 namespace WebAppAPI.Controller
 {
@@ -15,6 +17,8 @@ namespace WebAppAPI.Controller
             _naS = naS;
         }
         [HttpGet]
+        [Authorize(Roles = "1,2,3")]
+        [EnableQuery]
         public async Task<IActionResult> GetAllNewsArticles()
         {
             var newsArticles = await _naS.GetAllNewsArticlesAsync();

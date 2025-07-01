@@ -2,12 +2,14 @@
 using FUNews.BLL.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.AspNetCore.OData.Routing.Controllers;
 
 namespace WebAppAPI.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoryController : ControllerBase
+    public class CategoryController : ODataController
     {
         private readonly ICategoryService _cS;
         public CategoryController(ICategoryService cS)
@@ -15,6 +17,7 @@ namespace WebAppAPI.Controller
             _cS = cS;
         }
         [HttpGet]
+        [EnableQuery]
         public async Task<IActionResult> GetAllCategories()
         {
             var categories = await _cS.GetAllCategoriesAsync();

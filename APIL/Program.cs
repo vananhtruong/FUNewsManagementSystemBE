@@ -3,6 +3,11 @@ using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using WebAppAPI.Configuration;
 using WebAppAPI.Mapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Hangfire;
+using WebAppAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,32 +22,57 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://localhost:7285 ") /*https://localhost:7285   https://prnnew.runasp.net*/
+        policy.WithOrigins("https://localhost:7285") 
               .AllowCredentials()
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
 });
-builder.Services.AddAutoMapper(typeof(AutoMappingProfile));
 
-builder.Services.AddAuthentication("MyCookieAuth")
-    .AddCookie("MyCookieAuth", options =>
+
+// Add Hangfire services
+builder.Services.AddHangfire(config =>
+{
+    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+builder.Services.AddHangfireServer();
+builder.Services.AddScoped<WeeklyReportService>();
+
+builder.Services.AddAutoMapper(typeof(AutoMappingProfile));
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSettings["SecretKey"];
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        options.Cookie.Name = "MyAuthCookie";
-        options.LoginPath = "/Account/Login"; // redirect if not authenticated
-        options.AccessDeniedPath = "/Account/AccessDenied"; // redirect if not authorized
-        options.ExpireTimeSpan = TimeSpan.FromHours(1);
-        options.SlidingExpiration = true;
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // requires HTTPS
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        };
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddControllers().AddOData(options => 
-    options.Select().Filter().OrderBy());
+builder.Services.AddControllers().AddOData(opt =>
+    opt.Select().Filter().OrderBy().Count().Expand().SetMaxTop(100));
+
 
 var app = builder.Build();
+// Chạy thử ngay job gửi báo cáo
+using (var scope = app.Services.CreateScope())
+{
+    var jobClient = scope.ServiceProvider.GetRequiredService<IBackgroundJobClient>();
+    jobClient.Enqueue<WeeklyReportService>(x => x.SendWeeklyReportToAdminAsync());
+}
+
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -55,6 +85,10 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 app.UseCors("AllowFrontend");
+
+app.UseHangfireDashboard();
+HangfireJobScheduler.ScheduleJobs();
+
 
 app.UseAuthentication();
 app.UseAuthorization();
